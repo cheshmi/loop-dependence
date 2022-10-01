@@ -113,20 +113,42 @@ endif()
 
 project(loop_CD LANGUAGES C )
 
-find_package(MKL CONFIG OPTIONAL_COMPONENTS)
 
 
-add_executable(loop_CD
-        main.cpp
+add_executable(sparse_test
+        sparse_test.cpp
         )
-target_link_libraries(loop_CD PUBLIC
+target_link_libraries(sparse_test PRIVATE
         sym_sparse_blas
         aggregation
         )
+
+find_package(MKL CONFIG OPTIONAL_COMPONENTS)
 if(MKL_FOUND)
     add_definitions(-DMKL)
-    target_include_directories(loop_CD PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-    target_link_libraries(loop_CD PUBLIC $<LINK_ONLY:MKL::MKL>)
+    add_executable(dense_test
+            dense_test.cpp
+            )
+    target_include_directories(dense_test PRIVATE
+            $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>
+            sympiler/aggregation/include/
+            )
+    target_link_libraries(dense_test PRIVATE
+            $<LINK_ONLY:MKL::MKL>
+            aggregation
+            )
+
+    add_executable(sparse_mkl_test
+            sparse_mkl_test.cpp
+            )
+    target_include_directories(sparse_mkl_test PRIVATE
+            $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>
+            sympiler/aggregation/include/
+            )
+    target_link_libraries(sparse_mkl_test PRIVATE
+            $<LINK_ONLY:MKL::MKL>
+            aggregation
+            )
 endif()
 
 #target_link_libraries(loop_CD PRIVATE OpenBLAS::OpenBLAS)
