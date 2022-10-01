@@ -8,6 +8,7 @@
 
 #include <random>
 
+
 void rand_test_matrix(int m, double *mat){
  std::random_device rd;
  std::mt19937 mt(rd());
@@ -20,6 +21,7 @@ void rand_test_matrix(int m, double *mat){
   }
  }
 }
+
 
 
 #endif //LOOP_DEPENDENCE_UTILS_H

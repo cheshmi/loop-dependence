@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.16)
+cmake_minimum_required( VERSION 3.20)
 
 
 list(APPEND CMAKE_MODULE_PATH
@@ -111,12 +111,23 @@ endif()
 
 
 
-project(loop_CD)
+project(loop_CD LANGUAGES C )
+
+find_package(MKL CONFIG OPTIONAL_COMPONENTS)
+
+
 add_executable(loop_CD
         main.cpp
         )
-target_link_libraries(loop_CD
+target_link_libraries(loop_CD PUBLIC
         sym_sparse_blas
+        aggregation
         )
+if(MKL_FOUND)
+    add_definitions(-DMKL)
+    target_include_directories(loop_CD PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_link_libraries(loop_CD PUBLIC $<LINK_ONLY:MKL::MKL>)
+endif()
+
 #target_link_libraries(loop_CD PRIVATE OpenBLAS::OpenBLAS)
 #target_compile_definitions(loop_CD PRIVATE "OPENBLAS")
