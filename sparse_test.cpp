@@ -123,7 +123,7 @@ int test_sparse(int argc, char *argv[]){
 
 
  int part_no;
- int lp_=6, cp_=10, ic_=4;
+ int lp_=num_threads, cp_=10, ic_=4;
  auto *cost = new double[n]();
  for (int i = 0; i < n; ++i) {
   cost[i] = L1_csr->p[i+1] - L1_csr->p[i];
