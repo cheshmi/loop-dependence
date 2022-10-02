@@ -69,6 +69,9 @@ int test_sparse(int argc, char *argv[]){
  int use_HDAGG = 1;
  if(argc >= 4)
   use_HDAGG = atoi(argv[3]);
+ int cp_=10;
+ if(argc >= 5)
+  cp_ = atoi(argv[4]);
  /// Re-ordering L matrix
 #ifdef METIS
  //We only reorder L since dependency matters more in l-solve.
@@ -122,8 +125,7 @@ int test_sparse(int argc, char *argv[]){
  }
 
 
- int part_no;
- int lp_=num_threads, cp_=10, ic_=4;
+
  auto *cost = new double[n]();
  for (int i = 0; i < n; ++i) {
   cost[i] = L1_csr->p[i+1] - L1_csr->p[i];
@@ -131,6 +133,10 @@ int test_sparse(int argc, char *argv[]){
  /// SpTRSV Inspector
  timing_measurement inspect_time; inspect_time.start_timer();
  if(!use_HDAGG){
+  int part_no;
+  int lp_=num_threads, ic_ = cp_; bool bp;
+  sym_lib::lbc_config(n, L1_csr->p[n], num_threads, lp_, cp_, ic_, bp);
+  if(cp_ == 0) cp_ = ic_ = 2;
   get_coarse_levelSet_DAG_CSC_tree(n, L1_csr->p, L1_csr->i,
                                    L1_csr->stype,
                                    final_level_no,
@@ -138,7 +144,7 @@ int test_sparse(int argc, char *argv[]){
                                    final_part_ptr,final_node_ptr,
                                    lp_,cp_, ic_, cost);
  } else{
-  HDAGG::build_coarsened_level_parallel(n, L1_csc->p, L1_csc->i, lp_,
+  HDAGG::build_coarsened_level_parallel(n, L1_csc->p, L1_csc->i, num_threads,
                                         coarse_level_no, coarse_level_ptr, coarse_part_ptr, coarse_node_ptr);
  }
  inspect_time.measure_elapsed_time();
