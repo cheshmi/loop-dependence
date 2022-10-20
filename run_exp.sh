@@ -18,15 +18,6 @@ module load cmake
 module load gcc
 
 
-BINFILE=./build/loop_CD
-SPD_MAT_DIR=${HOME}/UFDB/SPD/
-NUM_THREAD=20
-
-MKL_NUM_THREADS=$NUM_THREAD; export MKL_NUM_THREADS
-OMP_NUM_THREADS=$NUM_THREAD; export OMP_NUM_THREADS
-export MKL_DYNAMIC=FALSE;
-export OMP_DYNAMIC=FALSE;
-#export MKL_VERBOSE=1
 
 #### Build
 mkdir build
@@ -42,7 +33,7 @@ cd ..
 
 BINDIR=./build/
 SPD_MAT_DIR=$HOME/UFDB/SPD/
-NUM_THREAD=20
+NUM_THREAD=6
 
 MKL_NUM_THREADS=$NUM_THREAD; export MKL_NUM_THREADS
 OMP_NUM_THREADS=$NUM_THREAD; export OMP_NUM_THREADS
@@ -61,15 +52,15 @@ done
 SPD_MATS=($(ls $SPD_MAT_DIR))
 echo "Config,N,M,NNZ,MV (sec),SV (sec),Inspection (sec),Matrix Name,Method,Seq SV (sec),Cores,Test," > logs/sparse_hdag.csv
 echo "Config,N,M,NNZ,MV (sec),SV (sec),Inspection (sec),Matrix Name,Method,Seq SV (sec),Cores,Test," > logs/sparse_lbc.csv
-#for mat in "${SPD_MATS[@]}"; do
-#  ${BINDIR}/sparse_test $SPD_MAT_DIR/$mat/$mat.mtx $NUM_THREAD >> logs/sparse_hdag.csv
-#  ${BINDIR}/sparse_test $SPD_MAT_DIR/$mat/$mat.mtx $NUM_THREAD 1 >> logs/sparse_lbc.csv
-#done
-
-for mat in $SPD_MAT_DIR/*.mtx; do
- ${BINDIR}/sparse_test ${mat} $NUM_THREAD >> logs/sparse_hdag.csv
- ${BINDIR}/sparse_test ${mat} $NUM_THREAD 0 >> logs/sparse_lbc.csv
+for mat in "${SPD_MATS[@]}"; do
+  ${BINDIR}/sparse_test $SPD_MAT_DIR/$mat/$mat.mtx $NUM_THREAD >> logs/sparse_hdag.csv
+  ${BINDIR}/sparse_test $SPD_MAT_DIR/$mat/$mat.mtx $NUM_THREAD 0 >> logs/sparse_lbc.csv
 done
+
+#for mat in $SPD_MAT_DIR/*.mtx; do
+# ${BINDIR}/sparse_test ${mat} $NUM_THREAD >> logs/sparse_hdag.csv
+# ${BINDIR}/sparse_test ${mat} $NUM_THREAD 0 >> logs/sparse_lbc.csv
+#done
 
 echo "Config,N,M,NNZ,MV (sec),MV Inspection (sec),SV (sec),Inspection (sec),Matrix Name,Method,Seq SV (sec),Cores,Test," > logs/sparse_lbc.csv
 for mat in $SPD_MAT_DIR/*.mtx; do
