@@ -35,6 +35,7 @@ int test_sparse_mkl(int argc, char *argv[]);
 
 
 int main(int argc, char *argv[]){
+// mkl_set_interface_layer(MKL_INTERFACE_LP64);
   std::cout<<"Sparse MKL,";
   test_sparse_mkl(argc, argv);
   std::cout<<"\n";
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]){
 int test_sparse_mkl(int argc, char *argv[]){
  CSC *L1_csc, *A = NULLPNTR;
  CSR *L1_csr;
- size_t n;
+ size_t n; MKL_INT stat;
  int num_threads = 6;
  int *perm;
  std::string matrix_name;
@@ -111,15 +112,17 @@ int test_sparse_mkl(int argc, char *argv[]){
   return -1;
  }
  /// SpMV Inspector
- auto stat = mkl_sparse_set_mv_hint(csrA, SPARSE_OPERATION_NON_TRANSPOSE,
+ timing_measurement mv_inspect_time; mv_inspect_time.start_timer();
+ stat = mkl_sparse_set_mv_hint(csrA, SPARSE_OPERATION_NON_TRANSPOSE,
                                     descrL, num_calls);
  if (stat != SPARSE_STATUS_SUCCESS) {
-  printf("analysis failed with %d\n",stat);
+  printf("Error in set hints for Task 1: mkl_sparse_set_mv_hint: %d \n",stat);
   return -1;
  }
  if (mkl_sparse_optimize(csrA) != SPARSE_STATUS_SUCCESS) {
   printf("optimization failed with ");
  }
+
  double alpha =1.0, beta=0.0;
  for (int i = 0; i < NTIMES; ++i) {
   std::fill_n(x, n, RVAL);
@@ -148,6 +151,10 @@ int test_sparse_mkl(int argc, char *argv[]){
                                       L1_csr->p + 1,
                                       L1_csr->i,
                                       L1_csr->x);
+ if (statl != SPARSE_STATUS_SUCCESS){
+  std::cout<<"CSR L creation failed";
+  return -1;
+ }
  std::vector<timing_measurement> t_sptrsv_array, t_sptrsv_seq_array;
  timing_measurement inspect_time; inspect_time.start_timer();
  /// SpTRSV Inspector
@@ -158,7 +165,7 @@ int test_sparse_mkl(int argc, char *argv[]){
   //return -1;
  }
  if (mkl_sparse_optimize(csrL) != SPARSE_STATUS_SUCCESS) {
-  printf("optimization failed with %d;");
+  printf("SV optimization failed with %d;");
  }
  inspect_time.measure_elapsed_time();
  /// SpTRSV Executor
@@ -184,7 +191,8 @@ int test_sparse_mkl(int argc, char *argv[]){
 
  //sptrsv_csr(n, L1_csr->p, L1_csr->i, L1_csr->x, y);
  /// Logging
- std::cout<<n<<","<<n<<","<<L1_csr->nnz<<","<<t_spmv_sec<<","<<t_sptrsv_sec<<","<<inspect_time.elapsed_time<<",";
+ std::cout<<n<<","<<n<<","<<L1_csr->nnz<<","<<t_spmv_sec<<","<<mv_inspect_time.elapsed_time<<","<<t_sptrsv_sec<<","<<
+  inspect_time.elapsed_time<<",";
  std::cout<<matrix_name<<","<< "MKL"<<",";
  std::cout<<num_threads<<",";
  /// Testing

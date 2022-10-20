@@ -71,3 +71,7 @@ for mat in $SPD_MAT_DIR/*.mtx; do
  ${BINDIR}/sparse_test ${mat} $NUM_THREAD 0 >> logs/sparse_lbc.csv
 done
 
+echo "Config,N,M,NNZ,MV (sec),MV Inspection (sec),SV (sec),Inspection (sec),Matrix Name,Method,Seq SV (sec),Cores,Test," > logs/sparse_lbc.csv
+for mat in $SPD_MAT_DIR/*.mtx; do
+ ${BINDIR}/sparse_mkl_test ${mat} $NUM_THREAD >> logs/sparse_mkl.csv
+done

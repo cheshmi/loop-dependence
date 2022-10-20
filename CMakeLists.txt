@@ -24,7 +24,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 #----------------------------------[ options ]---------------------------------#
 
 
-set(SYMPILER_BLAS_BACKEND "OpenBLAS" CACHE STRING "BLAS implementation for SYMPILER to use")
+set(SYMPILER_BLAS_BACKEND "MKL" CACHE STRING "BLAS implementation for SYMPILER to use")
 set_property(CACHE SYMPILER_BLAS_BACKEND PROPERTY STRINGS MKL OpenBLAS)
 
 if(${SYMPILER_BLAS_BACKEND} STREQUAL "MKL")
@@ -37,6 +37,7 @@ else()
     message(FATAL_ERROR "unrecognized value for `SYMPILER_BLAS_BACKEND` option: '${SYMPILER_BLAS_BACKEND}'")
 endif()
 
+#add_definitions(-Dmkl_interface=lp64)
 add_subdirectory(sympiler)
 
 #--------------------------------[ third party ]-------------------------------#
@@ -98,7 +99,7 @@ set(ALL_SOURCE_FILES
 
 if(UNIX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}   -std=c++11 -w -m64")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=x86-64   -mavx2")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=x86-64   -mavx2")
 endif()
 
 Set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
@@ -123,9 +124,13 @@ target_link_libraries(sparse_test PRIVATE
         aggregation
         )
 
-find_package(MKL CONFIG OPTIONAL_COMPONENTS)
-if(MKL_FOUND)
+if(NOT TARGET MKL::MKL)
+    set(MKL_INTERFACE "lp64")
+    find_package(MKL CONFIG OPTIONAL_COMPONENTS)
+endif()
+if(TARGET MKL::MKL)
     add_definitions(-DMKL)
+    message(STATUS "${MKL_IMPORTED_TARGETS}")
     add_executable(dense_test
             dense_test.cpp
             )
@@ -146,9 +151,10 @@ if(MKL_FOUND)
             sympiler/aggregation/include/
             )
     target_link_libraries(sparse_mkl_test PRIVATE
-            $<LINK_ONLY:MKL::MKL>
             aggregation
+            $<LINK_ONLY:MKL::MKL>
             )
+
 endif()
 
 #target_link_libraries(loop_CD PRIVATE OpenBLAS::OpenBLAS)
