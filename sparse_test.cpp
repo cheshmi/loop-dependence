@@ -66,9 +66,9 @@ int test_sparse(int argc, char *argv[]){
  if(argc >= 3)
   num_threads = atoi(argv[2]);
  omp_set_num_threads(num_threads);
- int use_HDAGG = 1;
+ int use_level_coarsening = 1;
  if(argc >= 4)
-  use_HDAGG = atoi(argv[3]);
+  use_level_coarsening = atoi(argv[3]);
  int cp_=10;
  if(argc >= 5)
   cp_ = atoi(argv[4]);
@@ -132,10 +132,10 @@ int test_sparse(int argc, char *argv[]){
  }
  /// SpTRSV Inspector
  timing_measurement inspect_time; inspect_time.start_timer();
- if(!use_HDAGG){
+ if(!use_level_coarsening){
   int part_no;
-  int lp_=num_threads, ic_ = cp_; bool bp;
-  sym_lib::lbc_config(n, L1_csr->p[n], num_threads, lp_, cp_, ic_, bp);
+  int lp_=num_threads, ic_ = cp_; bool bp=false;
+  //sym_lib::lbc_config(n, L1_csr->p[n], num_threads, lp_, cp_, ic_, bp);
   if(cp_ == 0) cp_ = ic_ = 2;
   get_coarse_levelSet_DAG_CSC_tree(n, L1_csr->p, L1_csr->i,
                                    L1_csr->stype,
@@ -152,7 +152,7 @@ int test_sparse(int argc, char *argv[]){
  for (int i = 0; i < NTIMES; ++i) {
   std::copy(y_cpy, y_cpy+n, y);
   timing_measurement t_sptrsv; t_sptrsv.start_timer();
-  if(!use_HDAGG) {
+  if(!use_level_coarsening) {
    sptrsv_csr_lbc(n, L1_csr->p, L1_csr->i, L1_csr->x, y,
                   final_level_no, fina_level_ptr,
                   final_part_ptr, final_node_ptr);
@@ -168,8 +168,9 @@ int test_sparse(int argc, char *argv[]){
 
  //sptrsv_csr(n, L1_csr->p, L1_csr->i, L1_csr->x, y);
  /// Logging
+ std::cout<<cp_<<",";
  std::cout<<n<<","<<n<<","<<L1_csr->nnz<<","<<t_spmv_sec<<","<<t_sptrsv_sec<<","<<inspect_time.elapsed_time<<",";
- std::cout<<matrix_name<<","<< ( use_HDAGG ? "HDAGG" : "LBC") <<","<<t_sptrsv_seq_sec<<",";
+ std::cout<<matrix_name<<","<< ( use_level_coarsening ? "HDAGG" : "LBC") <<","<<t_sptrsv_seq_sec<<",";
  std::cout<<num_threads<<",";
  /// Testing
  for (int i = 0; i < n; ++i) {
