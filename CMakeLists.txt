@@ -124,22 +124,37 @@ target_link_libraries(sparse_test PRIVATE
         aggregation
         )
 
-if(NOT TARGET MKL::MKL)
+#if(NOT TARGET MKL::MKL)
     set(MKL_INTERFACE "lp64")
-    find_package(MKL CONFIG OPTIONAL_COMPONENTS)
-endif()
-if(TARGET MKL::MKL)
+    find_package(MKL)
+    link_directories(
+            ${MKL_ROOT_PATH}/lib/intel64/
+            ${MKL_ROOT_PATH}/../compiler/lib/intel64
+    )
+    include_directories(
+            ${MKL_ROOT_PATH}/include/
+    )
+#endif()
+#if(TARGET MKL::MKL)
     add_definitions(-DMKL)
     message(STATUS "${MKL_IMPORTED_TARGETS}")
     add_executable(dense_test
             dense_test.cpp
             )
     target_include_directories(dense_test PRIVATE
-            $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>
+#            $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>
+            ${MKL_ROOT_PATH}/include/
             sympiler/aggregation/include/
             )
     target_link_libraries(dense_test PRIVATE
-            $<LINK_ONLY:MKL::MKL>
+#            $<LINK_ONLY:MKL::MKL>
+            mkl_intel_lp64
+            mkl_intel_thread
+            mkl_core
+            iomp5
+            pthread
+            m
+            dl
             aggregation
             )
 
@@ -147,15 +162,22 @@ if(TARGET MKL::MKL)
             sparse_mkl_test.cpp
             )
     target_include_directories(sparse_mkl_test PRIVATE
-            $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>
+#            $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>
             sympiler/aggregation/include/
             )
     target_link_libraries(sparse_mkl_test PRIVATE
             aggregation
-            $<LINK_ONLY:MKL::MKL>
+            mkl_intel_lp64
+            mkl_intel_thread
+            mkl_core
+            iomp5
+            pthread
+            m
+            dl
+#            $<LINK_ONLY:MKL::MKL>
             )
 
-endif()
+#endif()
 
 #target_link_libraries(loop_CD PRIVATE OpenBLAS::OpenBLAS)
 #target_compile_definitions(loop_CD PRIVATE "OPENBLAS")
