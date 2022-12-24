@@ -8,7 +8,7 @@ mkdir build
 cd build
 #make clean
 #rm -rf *.txt
-/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_PREFIX_PATH="$MKLROOT/lib/intel64;$MKLROOT/include;_deps/openblas-build/lib/"  -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_PREFIX_PATH="$MKLROOT/lib/intel64;$MKLROOT/include;_deps/openblas-build/lib/"  -DCMAKE_BUILD_TYPE=Release ..
 make -j 20
 
 
@@ -29,7 +29,7 @@ export OMP_DYNAMIC=FALSE;
 mkdir logs
 echo "Config,N,M,NNZ,MV (sec),SV (sec),Cores,Test," > logs/dense.csv
 for i in $(seq 100 100 20000); do
-  echo ${BINDIR}/dense_test $i $NUM_THREAD >> logs/dense_mac.csv
+  ${BINDIR}/dense_test $i $NUM_THREAD >> logs/dense_mac.csv
 done
 
 
@@ -45,7 +45,7 @@ for mat in $SPD_MAT_DIR/*.mtx; do
    done
 done
 
-echo "Config,N,M,NNZ,MV (sec),MV Inspection (sec),SV (sec),Inspection (sec),Matrix Name,Method,Seq SV (sec),Cores,Test," > logs/sparse_mkl_mac.csv
+echo "Config,N,M,NNZ,MV (sec),MV Inspection (sec),SV (sec),Inspection (sec),Matrix Name,Method,Cores,Test," > logs/sparse_mkl_mac.csv
 for mat in $SPD_MAT_DIR/*.mtx; do
  ${BINDIR}/sparse_mkl_test ${mat} $NUM_THREAD >> logs/sparse_mkl_mac.csv
 done
