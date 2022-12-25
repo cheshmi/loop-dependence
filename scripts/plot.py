@@ -67,6 +67,8 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
         flop_spmv_mkl = 2 * nnz_list / spmv_list["MV (sec)"].values / 1e9
         flop_sptrsv_mkl = (2 * nnz_list + spmv_list["N"].values) / spmv_list["SV (sec)"].values / 1e9
         print("Average sparse MKL mv speedup is: ", gmean(flop_spmv_mkl / flop_sptrsv_mkl))
+        print("Max Min MKL Sparse MV: ", min(flop_spmv_mkl), " - ", max(flop_spmv_mkl))
+        print("Max Min MKL Sparse SV: ", min(flop_sptrsv_mkl), " - ", max(flop_sptrsv_mkl))
 
     nnz_list = tuned_list["NNZ"].values
     flop_spmv = 2*nnz_list/tuned_list["MV (sec)"].values/1e9
@@ -83,7 +85,11 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
     ax1.scatter(nnz_list, flop_sptrsv, marker='o', c='m', label="Sparse Lower Triangular Solve (Sympiler)")
 
     print("Average dense mv speedup is: ", gmean(np.float32(flops_mv/flops_sv)))
+    print("Max Min MV: ", min(flops_mv), " - ", max(flops_mv))
+    print("Max Min SV: ", min(flops_sv), " - ", max(flops_sv))
     print("Average sparse mv speedup is: ", gmean(np.float32(flop_spmv/flop_sptrsv)))
+    print("Max Min Sparse MV: ", min(flop_spmv), " - ", max(flop_spmv))
+    print("Max Min Sparse SV: ", min(flop_sptrsv), " - ", max(flop_sptrsv))
     if csv_path_mkls != "":
         ax2.scatter(nnz_list, flop_spmv_mkl, marker='^', c='blue', label="Sparse Matrix-Vector Multiplication (MKL)")
         ax2.scatter(nnz_list, flop_sptrsv_mkl, marker='o', c='gray', label="Sparse Lower Triangular Solve (MKL I/E)")
