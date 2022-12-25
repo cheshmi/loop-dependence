@@ -12,7 +12,7 @@ font = {'weight': 'bold',
 
 matplotlib.rc('font', **font)
 ## Update this number
-num_cores = 4
+num_cores = 40
 
 def filter(df, **kwargs):
     bool_index = None
@@ -53,26 +53,13 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
     # res = [key for key in best_config if best_config[key] == max(best_config.values())]
     # tuned_list = filter(spmv_list, Div=res)
 
-    nnz_list = tuned_list["NNZ"].values
-    flop_spmv = 2*nnz_list/tuned_list["MV (sec)"].values/1e9
-    flop_sptrsv = (2*nnz_list + tuned_list["N"].values)/tuned_list["SV (sec)"].values/1e9
+
 
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(20, 12))
     if csv_path_mkls != '':
-        fig, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(33, 12))
-
-    ax0.scatter(dim, flops_mv, marker='^', c='black', label="Dense Matrix-Vector Multiplication (MKL)")
-    ax0.scatter(dim, flops_sv, marker='o', c='red', label="Dense Lower Triangular Solve (MKL)")
-
-    ax1.scatter(nnz_list, flop_spmv, marker='^', c='blue', label="Sparse Matrix-Vector Multiplication")
-    ax1.scatter(nnz_list, flop_sptrsv, marker='o', c='m', label="Sparse Lower Triangular Solve (Sympiler)")
-
-    print("Average dense mv speedup is: ", gmean(np.float32(flops_mv/flops_sv)))
-    print("Average sparse mv speedup is: ", gmean(np.float32(flop_spmv/flop_sptrsv)))
-
+        fig, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(37, 12))
     #ax1.plot(nnz, np.ones(len(nnz)), c='black')
-    max_y = max(max(flop_spmv), max(flop_sptrsv), max(flops_mv), max(flops_sv))
-    max_y -= 0.3*max_y
+    flop_spmv_mkl, flop_sptrsv_mkl = [], []
     if csv_path_mkls != '':
         df_sparse = pd.read_csv(csv_path_mkls)
         spmv_list = filter(df_sparse, Cores=num_cores).sort_values(by=['Matrix Name'])
@@ -80,12 +67,30 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
         flop_spmv_mkl = 2 * nnz_list / spmv_list["MV (sec)"].values / 1e9
         flop_sptrsv_mkl = (2 * nnz_list + spmv_list["N"].values) / spmv_list["SV (sec)"].values / 1e9
         print("Average sparse MKL mv speedup is: ", gmean(flop_spmv_mkl / flop_sptrsv_mkl))
-        ax2.scatter(nnz_list, flop_spmv_mkl, marker='^', c='green', label="Sparse Matrix-Vector Multiplication (MKL)")
-        ax2.scatter(nnz_list, flop_sptrsv_mkl, marker='o', c='gray', label="Sparse Lower Triangular Solve (MKL)")
-        max_y = max(max_y, max(flop_spmv_mkl), max(flop_sptrsv_mkl))
+
+    nnz_list = tuned_list["NNZ"].values
+    flop_spmv = 2*nnz_list/tuned_list["MV (sec)"].values/1e9
+    # if csv_path_mkls != "": # to have a similar baseline
+    #     flop_spmv = flop_spmv_mkl
+    flop_sptrsv = (2*nnz_list + tuned_list["N"].values)/tuned_list["SV (sec)"].values/1e9
+
+    max_y = max(max(flop_spmv), max(flop_sptrsv), max(flops_mv), max(flops_sv))
+    max_y -= 0.3*max_y
+
+    ax0.scatter(dim, flops_mv, marker='^', c='black', label="Dense Matrix-Vector Multiplication (MKL)")
+    ax0.scatter(dim, flops_sv, marker='o', c='red', label="Dense Lower Triangular Solve (MKL)")
+    ax1.scatter(nnz_list, flop_spmv, marker='^', c='green', label="Sparse Matrix-Vector Multiplication (Sympiler)")
+    ax1.scatter(nnz_list, flop_sptrsv, marker='o', c='m', label="Sparse Lower Triangular Solve (Sympiler)")
+
+    print("Average dense mv speedup is: ", gmean(np.float32(flops_mv/flops_sv)))
+    print("Average sparse mv speedup is: ", gmean(np.float32(flop_spmv/flop_sptrsv)))
+    if csv_path_mkls != "":
+        ax2.scatter(nnz_list, flop_spmv_mkl, marker='^', c='blue', label="Sparse Matrix-Vector Multiplication (MKL)")
+        ax2.scatter(nnz_list, flop_sptrsv_mkl, marker='o', c='gray', label="Sparse Lower Triangular Solve (MKL I/E)")
+        #max_y = max(max(flop_spmv_mkl), max(flop_sptrsv_mkl))
         ax2.set_ylim(0, max_y)
         ax2.set_yticks(range(0, int(max_y), 2 if num_cores == 4 else 10))
-        ax2.set(xlabel="Number of NonZero Elements", ylabel="GFLOP/s")
+        ax2.set(xlabel="Number of NonZero Elements", ylabel="GFLOP/s", title="(c)")
         ax2.spines['top'].set_visible(False)
         ax2.spines['right'].set_visible(False)
         ax2.legend(loc='upper left')
@@ -94,8 +99,8 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
     ax0.set_ylim(0, max_y)
     ax0.set_yticks(range(0, int(max_y), 2 if num_cores == 4 else 10))
     ax1.set_yticks(range(0, int(max_y), 2 if num_cores == 4 else 10))
-    ax0.set(xlabel="Matrix Dimension", ylabel="GFLOP/s")
-    ax1.set(xlabel="Number of NonZero Elements", ylabel="GFLOP/s")
+    ax0.set(xlabel="Matrix Dimension", ylabel="GFLOP/s", title="(a)")
+    ax1.set(xlabel="Number of NonZero Elements", ylabel="GFLOP/s", title="(b)")
     ax0.spines['top'].set_visible(False)
     ax0.spines['right'].set_visible(False)
     ax1.spines['top'].set_visible(False)
@@ -104,7 +109,7 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
     ax1.legend(loc='upper left')
 
 
-    fig.suptitle('Performance of Loop-carried Dependence vs. Parallel Loop, # of cores {}'.format(num_cores), fontsize=30)
+    fig.suptitle('Performance of Loop-carried Dependence vs. Parallel Loop, {} cores'.format(num_cores), fontsize=30)
     #plt.show()
     plt.savefig("sympiler_lbc"+str(num_cores)+".png")
 
