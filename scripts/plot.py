@@ -8,7 +8,7 @@ import matplotlib
 from scipy.stats import gmean
 
 font = {'weight': 'bold',
-        'size': 22}
+        'size': 25}
 
 matplotlib.rc('font', **font)
 ## Update this number
@@ -57,7 +57,7 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
 
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(20, 12))
     if csv_path_mkls != '':
-        fig, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(37, 12))
+        fig, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(43, 12))
     #ax1.plot(nnz, np.ones(len(nnz)), c='black')
     flop_spmv_mkl, flop_sptrsv_mkl = [], []
     if csv_path_mkls != '':
@@ -79,8 +79,8 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
     max_y = max(max(flop_spmv), max(flop_sptrsv), max(flops_mv), max(flops_sv))
     max_y -= 0.3*max_y
 
-    ax0.scatter(dim, flops_mv, marker='^', c='black', label="Dense Matrix-Vector Multiplication (MKL)")
-    ax0.scatter(dim, flops_sv, marker='o', c='red', label="Dense Lower Triangular Solve (MKL)")
+    ax0.scatter(dim/1e3, flops_mv, marker='^', c='black', label="Dense Matrix-Vector Multiplication (MKL)")
+    ax0.scatter(dim/1e3, flops_sv, marker='o', c='red', label="Dense Lower Triangular Solve (MKL)")
     ax1.scatter(nnz_list, flop_spmv, marker='^', c='green', label="Sparse Matrix-Vector Multiplication (Sympiler)")
     ax1.scatter(nnz_list, flop_sptrsv, marker='o', c='m', label="Sparse Lower Triangular Solve (Sympiler)")
 
@@ -105,7 +105,7 @@ def plot(csv_path_dense, csv_path_sparse, csv_path_mkls=''):
     ax0.set_ylim(0, max_y)
     ax0.set_yticks(range(0, int(max_y), 2 if num_cores == 4 else 10))
     ax1.set_yticks(range(0, int(max_y), 2 if num_cores == 4 else 10))
-    ax0.set(xlabel="Matrix Dimension", ylabel="GFLOP/s", title="(a)")
+    ax0.set(xlabel="Matrix Dimension (x 1000)", ylabel="GFLOP/s", title="(a)")
     ax1.set(xlabel="Number of NonZero Elements", ylabel="GFLOP/s", title="(b)")
     ax0.spines['top'].set_visible(False)
     ax0.spines['right'].set_visible(False)
