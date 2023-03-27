@@ -14,7 +14,7 @@ visit [this blog post](https://blog.cheshmi.cc/loop-carried-dep-vs-parallel.html
 # Build and Run
 First you should clone the repository recursively :
 ```bash
-git clone --recursive  https://github.com/cheshmi/psc_example.git
+git clone --recursive  https://github.com/cheshmi/loop-dependence.git
 ```
 
 To build and run, run the provided script:
