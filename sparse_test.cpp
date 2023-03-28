@@ -26,6 +26,64 @@
 #define RVAL 0.5
 using namespace sym_lib;
 
+struct schedule_param{
+ int initial_cut, coarsen_factor, num_wparts, bin_pack= false, post_order= false;
+};
+int build_coarsened_level(const int n, const int* Lp, const int* Li,
+                                   const int cores,
+                                   schedule_param& param,
+                                   int& coarse_level_no,
+                                   std::vector<int>& coarse_level_ptr,
+                                   std::vector<int>& coarse_part_ptr,
+                                   std::vector<int>& coarse_node_ptr
+){
+ int coarsen_factor, num_wparts=cores, i_cut=0;
+ bool bin_pack=false;
+ bool postOrder=false;//set to false manually here
+ if(param.coarsen_factor == -1){
+  sym_lib::lbc_config(n, Lp[n], cores, num_wparts, coarsen_factor, i_cut, bin_pack);
+ } else{
+  coarsen_factor = param.coarsen_factor;
+  num_wparts = param.num_wparts;
+  i_cut = param.initial_cut;
+  bin_pack = param.bin_pack;
+  postOrder = param.post_order;
+ }
+ if(coarsen_factor > 1){
+  std::vector<int> level_ptr;
+  std::vector<int> level_set, node_to_level, WM;
+  level_ptr.resize(n + 1);
+  level_set.resize(n);
+  node_to_level.resize(n);
+  int n_levels = HDAGG::build_levelSet_CSC(n, Lp, Li, level_ptr.data(), level_set.data(),
+                                           node_to_level.data() );
+  for (int i = 0; i < n_levels;) {
+   WM.push_back(i);
+   i+=coarsen_factor;
+   if(i >= n_levels){
+    WM.push_back(n_levels);
+    break;
+   }
+  }
+  HDAGG::computeSchedule(cores, n, Lp, Li, level_ptr.data(), level_set.data(),
+                         node_to_level.data(), WM, {{0}},
+                         coarse_level_no, coarse_level_ptr, coarse_part_ptr, coarse_node_ptr,
+                         bin_pack, postOrder);
+ } else{ // fall back to basic wavefront for very sparse DAGs
+  std::vector<int> node_to_level;
+  coarse_part_ptr.resize(n + 1);
+  coarse_node_ptr.resize(n);
+  node_to_level.resize(n);
+  coarse_level_no = HDAGG::build_levelSet_CSC(n, Lp, Li, coarse_part_ptr.data(),
+                                              coarse_node_ptr.data(), node_to_level.data());
+  coarse_level_ptr.resize( coarse_level_no + 1);
+  for (int i = 0; i < coarse_level_no+1; ++i) {
+   coarse_level_ptr[i] = i;
+  }
+ }
+ return 1;
+}
+
 
 int test_sparse(int argc, char *argv[]);
 
@@ -73,6 +131,7 @@ int test_sparse(int argc, char *argv[]){
  if(argc >= 5)
   cp_ = atoi(argv[4]);
  /// Re-ordering L matrix
+#undef METIS
 #ifdef METIS
  //We only reorder L since dependency matters more in l-solve.
  //perm = new int[n]();
@@ -144,7 +203,8 @@ int test_sparse(int argc, char *argv[]){
                                    final_part_ptr,final_node_ptr,
                                    lp_,cp_, ic_, cost);
  } else{
-  HDAGG::build_coarsened_level_parallel(n, L1_csc->p, L1_csc->i, num_threads,
+  schedule_param sp; sp.coarsen_factor = sp.initial_cut = cp_; sp.num_wparts = num_threads;
+  build_coarsened_level(n, L1_csc->p, L1_csc->i, num_threads, sp,
                                         coarse_level_no, coarse_level_ptr, coarse_part_ptr, coarse_node_ptr);
  }
  inspect_time.measure_elapsed_time();
@@ -170,7 +230,7 @@ int test_sparse(int argc, char *argv[]){
  /// Logging
  std::cout<<cp_<<",";
  std::cout<<n<<","<<n<<","<<L1_csr->nnz<<","<<t_spmv_sec<<","<<t_sptrsv_sec<<","<<inspect_time.elapsed_time<<",";
- std::cout<<matrix_name<<","<< ( use_level_coarsening ? "HDAGG" : "LBC") <<","<<t_sptrsv_seq_sec<<",";
+ std::cout<<matrix_name<<","<< ( use_level_coarsening ? "LC" : "LBC") <<","<<t_sptrsv_seq_sec<<",";
  std::cout<<num_threads<<",";
  /// Testing
  for (int i = 0; i < n; ++i) {

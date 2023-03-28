@@ -9,7 +9,7 @@
 #SBATCH --mail-user=kazem.cheshmi@gmail.com
 #SBATCH --nodes=1
 #SBATCH --output="DDT.%j.%N.out"
-#SBATCH -t 10:00:00
+#SBATCH -t 2:00:00
 
 module load NiaEnv/.2022a
 module load intel/2022u2
@@ -47,17 +47,17 @@ export OMP_DYNAMIC=FALSE;
 
 
 mkdir logs
-echo "Config,N,M,NNZ,MV (sec),SV (sec),Cores,Test," > logs/dense.csv
-for i in {100..20000..100} ; do
-  ${BINDIR}/dense_test $i $NUM_THREAD >> logs/dense.csv
-done
+#echo "Config,N,M,NNZ,MV (sec),SV (sec),Cores,Test," > logs/dense.csv
+#for i in {100..20000..100} ; do
+#  ${BINDIR}/dense_test $i $NUM_THREAD >> logs/dense.csv
+#done
 
 
 SPD_MATS=($(ls $SPD_MAT_DIR))
 echo "Config,Div,N,M,NNZ,MV (sec),SV (sec),Inspection (sec),Matrix Name,Method,Seq SV (sec),Cores,Test," > logs/sparse_lbc.csv
 for mat in "${SPD_MATS[@]}"; do
-  for div in 2 4 6 8 10 20 50 100 200; do
-      ${BINDIR}/sparse_test $SPD_MAT_DIR/$mat $NUM_THREAD 0 $div >> logs/sparse_lbc.csv
+  for div in 2 8 10 20 50 100 200; do
+      ${BINDIR}/sparse_test $SPD_MAT_DIR/$mat $NUM_THREAD 1 $div >> logs/sparse_lbc.csv
    done
 done
 
